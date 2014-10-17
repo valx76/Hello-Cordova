@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+     KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="msapplication-tap-highlight" content="no" />
+        <!-- WARNING: for iOS 7, remove the width=device-width and height=device-height attributes. See https://issues.apache.org/jira/browse/CB-4323 -->
+        <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
+        <link rel="stylesheet" type="text/css" href="css/index.css" />
+        <title>Hello Cordova</title>
+    </head>
+    <body>
+        <div id="div_home" class="app">
+            <h1>Cordova - Testing App</h1>
+            <div id="deviceready" class="blink">
+                <p class="event listening">Connecting to Device</p>
+                <p class="event received">Device is Ready</p>
+            </div>
+            <input id="btn_picture" type="button" value="Take a picture" />
+        </div>
+        
+        <div id="div_picture" style="display:none;">
+            <div id="picture_container">
+                <img id="picture" alt="picture from camera" />
+            </div>
+        </div>
+        
+        
+        <!-- Face detection -->
+        <script src="js/objectdetect.js"></script>
+        <script src="js/objectdetect.frontalface.js"></script>
+        <script src="js/jquery-2.1.1.min.js"></script>
+        <script src="js/jquery.objectdetect.js"></script>
+        
+        <!-- Cordova -->
+        <script type="text/javascript" src="cordova.js"></script>
+        <script type="text/javascript" src="js/index.js"></script>
+        
+        
+        <script type="text/javascript">
+            // jQuery highlight function (red square around faces)
+            $.fn.highlight = function(rect) {
+                $('<div />', {
+                    'css': {
+                        'border':   '2px solid red',
+                        'position': 'absolute',
+                        'left':     ($(this).offset().left + rect[0]) + 'px',
+                        'top':      ($(this).offset().top  + rect[1]) + 'px',
+                        'width':    rect[2] + 'px',
+                        'height':   rect[3] + 'px'
+                    },
+                    'class': 'highlighted_faces'
+                }).appendTo('body');
+            };
+            
+            
+            document.addEventListener('deviceready', onDeviceReady, false);
+            
+            
+            function onDeviceReady() {
+                // Handle the back button
+                document.addEventListener('backbutton', onBackPressed, false);
+                
+                // Open the camera when click on 'btn_picture'
+                document.getElementById('btn_picture').onclick = function() {
+                    navigator.camera.getPicture(cameraSuccess, cameraError, {
+                        quality: 75,
+                        targetWidth: window.innerWidth,
+                        targetHeight: window.innerHeight,
+                        destinationType: Camera.DestinationType.DATA_URL
+                    });
+                };
+            }
+            
+            function onBackPressed() {
+                // Exit the app when the user is already on div_home
+                if (document.getElementById('div_home').style.display !== 'none')
+                    navigator.app.exitApp();
+                
+                // Hide div_photo and display div_home
+                document.getElementById('div_home').style.display = 'block';
+                document.getElementById('div_picture').style.display = 'none';
+                
+                
+                // Remove highlighted rectangles
+                $('.highlighted_faces').remove();
+            }
+            
+            
+            function cameraSuccess(imageData) {
+                alert('Great, the picture has been taken :-) !');
+                
+                // Hide div_home and display div_photo
+                document.getElementById('div_home').style.display = 'none';
+                document.getElementById('div_picture').style.display = 'block';
+                
+                var image = document.getElementById('picture');
+                image.src = 'data:image/jpeg;base64,' + imageData;
+                
+                
+                // Detect faces
+                $('#picture').objectdetect('all', {classifier: objectdetect.frontalface}, function(faces) {
+                    alert(faces.length + ' face(s) detected.');
+                    for (var i = 0; i < faces.length; i++) {
+                        $(this).highlight(faces[i]);
+                    }
+                });
+            }
+            
+            function cameraError(message) {
+                alert('ERROR : ' + message);
+            }
+        </script>
+    </body>
+</html>
